@@ -93,7 +93,7 @@ class Parser:
         temp = ""
         self.skipForWhiteSpaces(input)
         if self.index < len(input) and input[self.index].isalpha():
-            while self.index < len(input) and (input[self.index].isalnum() or input[self.index] == '_'):
+            while self.index < len(input) and input[self.index].isalnum():
                 temp += input[self.index]
                 self.index += 1
             if temp:
