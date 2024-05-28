@@ -15,6 +15,9 @@ class Parser:
     def __init__(self):
         self.tokenMap = self.setUpTokenMap()  # Correctly initialize the tokenMap instance variable
 
+    def clearResult(self):
+        self.result.clear()
+
     def identifyNumericType(self, string):
         # Compiled regular expressions to match different numeric types
         byte_regex = re.compile(r"-?\d+[bB]")
