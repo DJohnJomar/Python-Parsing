@@ -3,8 +3,15 @@ import re
 
 class Parser:
 
+    #global Variables
+    tokenMap = {}
+    result = []
+    index = 0
+    input = None
+    hasDataType = False
+
     def __init__(self):
-        pass
+        tokenMap = setUpTokenMap()
 
     def identifyNumericType(self, string):
         # Regular expressions to match different numeric types
@@ -31,10 +38,63 @@ class Parser:
         else:
             return "Not a numeric type"
 
-    def check_for_token(self, string, token_map):
+    def checkForToken(self, string, token_map):
         if string in token_map:
             return f"{string} : {token_map[string]}"
-            return None
 
     def isOperator(self, character):
         return character in {'=', '+', '-', '*', '/', '%'}
+
+    
+    def setUpTokenMap(self):
+        token_map = {
+        "byte": "Keyword",
+        "short": "Keyword",
+        "int": "Keyword",
+        "long": "Keyword",
+        "float": "Keyword",
+        "double": "Keyword",
+        "=": "Equal Sign",
+        "+": "Plus Sign",
+        "-": "Minus Sign",
+        "*": "Multiplication Sign",
+        "/": "Division Sign",
+        "%": "Modulo Sign",
+        "++": "Increment sign",
+        "--": "Decrement Sign",
+        "+=": "Compound Addition",
+        "-=": "Compound Subtractions",
+        "*=": "Compound Multiplication",
+        "/=": "Compound Division",
+        "%=": "Compound Modulo",
+        "(": "Open Parenthesis",
+        ")": "Close Parenthesis",
+        ";": "Semicolon"
+        }
+        return token_map
+    
+    def skipForWhiteSpaces(self, input):
+        while index < len(input) and input[index] == ' ':
+            index += 1
+
+    def parseDataType(self, input:str):
+        pass
+    def parseIdentifier(self, input:str):
+        pass
+
+    def parseAssignment(self, input:str):
+        temp = ""
+        parseDataType(input)
+        parseidentifier(input)
+
+        if index < len(input) and input[index] == '=':
+            temp += input[index]
+            checkForToken(temp)
+            index++
+            
+
+
+
+    
+
+   
