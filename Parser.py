@@ -5,16 +5,12 @@ class SyntaxErrorException(Exception):
         super().__init__(message)
 
 class Parser:
-    # Instance Variables
-    tokenMap = {}
-    result = []
-    index = 0
-    input = None
-    hasDataType = False
-    value = 0
-
     def __init__(self):
-        self.tokenMap = self.setUpTokenMap()  # Correctly initialize the tokenMap instance variable
+        self.tokenMap = self.setUpTokenMap()  
+        self.result = []
+        self.index = 0
+        self.hasDataType = False
+        self.value = 0
 
     def clearResult(self):
         self.result.clear()
@@ -23,7 +19,6 @@ class Parser:
         return self.value
 
     def identifyNumericType(self, string):
-        # Compiled regular expressions to match different numeric types
         byte_regex = re.compile(r"-?\d+[bB]")
         short_regex = re.compile(r"-?\d+[sS]")
         long_regex = re.compile(r"-?\d+[lL]")
@@ -31,7 +26,6 @@ class Parser:
         double_regex = re.compile(r"-?\d+\.\d+([dD]|\.)?")
         int_regex = re.compile(r"-?\d+")
 
-        # Checking if the input string matches one of the patterns
         if byte_regex.fullmatch(string):
             return "Byte Literal"
         elif short_regex.fullmatch(string):
@@ -88,121 +82,94 @@ class Parser:
             self.index += 1
 
     def parseSemiColon(self, input):
-        temp = ""
         self.skipForWhiteSpaces(input)
-
         if self.index < len(input) and input[self.index] == ';':
-            temp += input[self.index]
+            self.checkForToken(input[self.index])
             self.index += 1
-            self.checkForToken(temp)
         else:
             raise SyntaxErrorException(f"Expected a semicolon at index {self.index}")
-
-
-    
 
     def parseDataType(self, input: str):
         temp = ""
         self.skipForWhiteSpaces(input)
-
         if self.index < len(input) and input[self.index].isalpha():
-            while self.index < len(input) and input[self.index].isalnum() and input[self.index] != '=':
+            while self.index < len(input) and (input[self.index].isalnum() or input[self.index] == '_'):
                 temp += input[self.index]
                 self.index += 1
-            
             if temp:
                 self.hasDataType = self.checkForToken(temp)
                 if not self.hasDataType:
                     self.index = 0
 
-
-
     def parseNumber(self, input):
         temp = ""
         self.skipForWhiteSpaces(input)
-
-        while self.index < len(input) and input[self.index].isdigit() or input[self.index] == '.':
+        while self.index < len(input) and (input[self.index].isdigit() or input[self.index] == '.' or input[self.index] in 'fFdDlLsSbB'):
             temp += input[self.index]
             self.index += 1
         self.result.append(f"{temp} : {self.identifyNumericType(temp)}")
         self.skipForWhiteSpaces(input)
-        return float(temp)
+        return float(temp.rstrip('fFdDlLsSbB'))
 
-
-    def parseFactor(self, input:str):
-        temp = ""
+    def parseFactor(self, input: str):
         self.skipForWhiteSpaces(input)
-
         if self.index < len(input) and input[self.index] == '(':
-            temp += input[self.index]
-            self.checkForToken(temp)
+            self.checkForToken(input[self.index])
             self.index += 1
             value = self.parseExpression(input)
             self.skipForWhiteSpaces(input)
             if self.index < len(input) and input[self.index] == ')':
-                temp = ")"
-                self.checkForToken(temp)
+                self.checkForToken(input[self.index])
                 self.index += 1
                 self.skipForWhiteSpaces(input)
                 return value
             else:
                 raise SyntaxErrorException(f"Expected ')' at index {self.index}")
-            
-        elif input[self.index].isdigit():
-            return self.parseNumber(input)  # Return the parsed number
-            
+        elif self.index < len(input) and (input[self.index].isdigit() or input[self.index] == '.'):
+            return self.parseNumber(input)
         else:
             raise SyntaxErrorException(f"Expected a digit or an expression at index {self.index}")
-            
-    def parseTerm(self, input:str):
-        temp = ""
-        value = self.parseFactor(input)  # Initialize value with the parsed factor
-        self.skipForWhiteSpaces(input)
 
+    def parseTerm(self, input: str):
+        value = self.parseFactor(input)
+        self.skipForWhiteSpaces(input)
         while self.index < len(input) and input[self.index] in '*/':
-            temp += input[self.index]
-            self.checkForToken(temp)
             operator = input[self.index]
+            self.checkForToken(operator)
             self.index += 1
-            temp = ""
             operand = self.parseFactor(input)
             if operator == '*':
-                value *= operand  # Use the parsed value as the initial value for multiplication
+                value *= operand
             elif operator == '/':
-                value /= operand  # Use the parsed value as the initial value for division
+                value /= operand
             else:
                 raise SyntaxErrorException(f"Invalid operator {operator} at index {self.index}")
         self.skipForWhiteSpaces(input)
         return value
 
-    def parseExpression(self, input:str):
-        temp = ""
-        value = self.parseTerm(input)  # Initialize value with the parsed term
-
+    def parseExpression(self, input: str):
+        value = self.parseTerm(input)
+        self.skipForWhiteSpaces(input)
         while self.index < len(input) and input[self.index] in '+-%':
-            temp += input[self.index]
-            self.checkForToken(temp)
             operator = input[self.index]
+            self.checkForToken(operator)
             self.index += 1
-            temp = ""
             term_value = self.parseTerm(input)
             if operator == '+':
                 value += term_value
             elif operator == '-':
-                value -= term_value  # Correctly subtract the term value
+                value -= term_value
             elif operator == '%':
                 value %= term_value
             else:
                 raise SyntaxErrorException(f"Invalid operator {operator} at index {self.index}")
-
         return value
-    
+
     def parseIdentifier(self, input):
         temp = ""
         self.skipForWhiteSpaces(input)
-
         if self.index < len(input) and input[self.index].isalpha():
-            while self.index < len(input) and input[self.index].isalnum() or input[self.index] == '_':
+            while self.index < len(input) and (input[self.index].isalnum() or input[self.index] == '_'):
                 temp += input[self.index]
                 self.index += 1
             self.result.append(temp + " : Identifier")
@@ -210,40 +177,28 @@ class Parser:
         else:
             raise SyntaxErrorException(f"Expected identifier at index {self.index}")
 
-
     def parseAssignment(self, input: str):
         self.index = 0
         self.hasDataType = False
         self.value = 0
-        
-        temp = ""
         self.parseDataType(input)
         self.parseIdentifier(input)
-
         if self.index < len(input) and input[self.index] == '=':
-            temp += input[self.index]
-            self.checkForToken(temp)
-            self.index += 1  # Correct increment syntax
+            self.checkForToken(input[self.index])
+            self.index += 1
             tempValue = self.parseExpression(input)
             self.parseSemiColon(input)
-            
-
         elif self.index < len(input) and self.isOperator(input[self.index]):
+            temp = ""
             temp += input[self.index]
             self.index += 1
-            operator = input[self.index]
-            temp += operator
+            temp += input[self.index]
             self.index += 1
             self.checkForToken(temp)
+            
             self.skipForWhiteSpaces(input)
-
             tempValue = self.parseExpression(input)
             self.parseSemiColon(input)
-            self.value = tempValue
-
         else:
             raise SyntaxErrorException(f"Expected '=' at index {self.index}")
-
-
-
-
+        self.value = tempValue
