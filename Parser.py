@@ -1,5 +1,19 @@
 import re
-
+"""
+The program follows the following BNF:
+ <arithmetic expression> =:: <data type> <identifier> = <expression>;
+                             |<data type> <identifier> += <expression>; // The compounds operators
+                              | <identifier> += <expression>; // The compounds operators
+                              | <identifier> = <expression>;
+  <expression> =:: <term> {+ | - | % <term>}
+  <term> =:: <factor> {* | / factor}
+  <factor> =:: (<expression>) | <number> 
+  <number =:: <digit> {<digit>} |  {<digit>}["."{<digit>}]
+  <identifier> =:: <letter> {<letter>}
+  <data type> =:: "int" |... |double
+  <digit> =:: "0"| ... | "9"
+  <letter> =:: "a" | ... | "Z"
+"""
 class SyntaxErrorException(Exception):
     def __init__(self, message):
         super().__init__(message)
@@ -18,6 +32,7 @@ class Parser:
     def getValue(self):
         return self.value
 
+    #identifies a numercy type through regex
     def identifyNumericType(self, string):
         byte_regex = re.compile(r"-?\d+[bB]")
         short_regex = re.compile(r"-?\d+[sS]")
@@ -41,6 +56,7 @@ class Parser:
         else:
             return "Not a numeric type"
 
+    #checks if the string exist in the maps of tokens
     def checkForToken(self, string):
         if string in self.tokenMap:
             self.result.append(f"{string} : {self.tokenMap[string]}")
@@ -50,6 +66,7 @@ class Parser:
     def isOperator(self, character):
         return character in {'=', '+', '-', '*', '/', '%'}
 
+    #fills map with values
     def setUpTokenMap(self):
         tokenMap = {
             "byte": "Keyword",
@@ -89,6 +106,8 @@ class Parser:
         else:
             raise SyntaxErrorException(f"Expected a semicolon at index {self.index}")
 
+    #Parsing returns to zero if a data type is not present, meaning if checkForToken returns false it does not have a data type
+    #Program then proceeds to parse identifier
     def parseDataType(self, input: str):
         temp = ""
         self.skipForWhiteSpaces(input)
@@ -101,6 +120,7 @@ class Parser:
                 if not self.hasDataType:
                     self.index = 0
 
+    #Parses the number then returns the value
     def parseNumber(self, input):
         temp = ""
         self.skipForWhiteSpaces(input)
@@ -111,6 +131,7 @@ class Parser:
         self.skipForWhiteSpaces(input)
         return float(temp.rstrip('fFdDlLsSbB'))
 
+    #Parses expression within parenthesis, returns the return value of parseExpression()
     def parseFactor(self, input: str):
         self.skipForWhiteSpaces(input)
         if self.index < len(input) and input[self.index] == '(':
@@ -130,6 +151,7 @@ class Parser:
         else:
             raise SyntaxErrorException(f"Expected a digit or an expression at index {self.index}")
 
+    #Parses the terms, computes the values present in it and returns it
     def parseTerm(self, input: str):
         value = self.parseFactor(input)
         self.skipForWhiteSpaces(input)
@@ -147,6 +169,7 @@ class Parser:
         self.skipForWhiteSpaces(input)
         return value
 
+    #Parses expressions, returns the computed value
     def parseExpression(self, input: str):
         value = self.parseTerm(input)
         self.skipForWhiteSpaces(input)
@@ -165,6 +188,7 @@ class Parser:
                 raise SyntaxErrorException(f"Invalid operator {operator} at index {self.index}")
         return value
 
+    #Parses identifiers
     def parseIdentifier(self, input):
         temp = ""
         self.skipForWhiteSpaces(input)
@@ -177,6 +201,8 @@ class Parser:
         else:
             raise SyntaxErrorException(f"Expected identifier at index {self.index}")
 
+    #Parses the whole arithmetic expression, e.g. int x = 1+1; etc
+    #Accounts for simple assignment or compound assignment (int x += value; etc)
     def parseAssignment(self, input: str):
         self.index = 0
         self.hasDataType = False

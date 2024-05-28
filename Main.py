@@ -17,13 +17,17 @@ class Main:
                 #print("\n----- Lexeme : Token Pairs -----\n")
                 # for token in parser.result:
                 #     print(token)
+
                 print("Input is Valid!")
                 print("Value: "+str(parser.getValue()))
                 parser.clearResult()
+            
+            #Catches Syntax Errors detected by the parser
             except SyntaxErrorException as e:
                 print(e)
                 print("Invalid Input")
                 parser.clearResult()
+            #Catches other errors not covered by the parser
             except Exception as e:
                 print("Invalid Input. ", e)
                 parser.clearResult()
