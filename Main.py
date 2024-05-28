@@ -20,6 +20,9 @@ class Main:
                 print(e)
                 print("Invalid Input")
                 parser.clearResult()
+            except Exception as e:
+                print("Invalid Input. ", e)
+                parser.clearResult()
 
 if __name__ == "__main__":
     Main.main()

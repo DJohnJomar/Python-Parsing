@@ -44,8 +44,8 @@ class Parser:
             return "Not a numeric type"
 
     def checkForToken(self, string):
-        if string in self.token_map:
-            self.result.append(f"{string} : {self.token_map[string]}")
+        if string in self.tokenMap:
+            self.result.append(f"{string} : {self.tokenMap[string]}")
             return True
         return False
 
@@ -53,7 +53,7 @@ class Parser:
         return character in {'=', '+', '-', '*', '/', '%'}
 
     def setUpTokenMap(self):
-        token_map = {
+        tokenMap = {
             "byte": "Keyword",
             "short": "Keyword",
             "int": "Keyword",
@@ -77,27 +77,36 @@ class Parser:
             ")": "Close Parenthesis",
             ";": "Semicolon"
         }
-        return token_map
+        return tokenMap
     
     def skipForWhiteSpaces(self, input):
         while self.index < len(input) and input[self.index] == ' ':
             self.index += 1
 
     def parseSemiColon(self, input):
-        pass
+        temp = ""
+        self.skipForWhiteSpaces(input)
+
+        if self.index < len(input) and input[self.index] == ';':
+            temp += input[self.index]
+            self.index += 1
+            self.checkForToken(temp)
+        else:
+            raise SyntaxErrorException(f"Expected a semicolon at index {self.index}")
+
 
     
 
     def parseDataType(self, input: str):
         temp = ""
-        self.skipForWhiteSpaces()
+        self.skipForWhiteSpaces(input)
 
         if self.index < len(input) and input[self.index].isalpha():
             while self.index < len(input) and input[self.index].isalnum() and input[self.index] != '=':
                 temp += input[self.index]
                 self.index += 1
             
-            if not temp:
+            if temp:
                 self.hasDataType = self.checkForToken(temp)
                 if not self.hasDataType:
                     self.index = 0
@@ -106,30 +115,30 @@ class Parser:
 
     def parseNumber(self, input):
         temp = ""
-        self.skipForWhiteSpaces()
+        self.skipForWhiteSpaces(input)
 
         while self.index < len(input) and input[self.index].isdigit() or input[self.index] == '.':
             temp += input[self.index]
             self.index += 1
-        self.result.append(f"{temp} : {self.identify_numeric_type(temp)}")
-        self.skip_for_white_spaces()
+        self.result.append(f"{temp} : {self.identifyNumericType(temp)}")
+        self.skipForWhiteSpaces(input)
 
 
     def parseFactor(self, input:str):
         temp = ""
-        self.skipForWhiteSpaces()
+        self.skipForWhiteSpaces(input)
 
         if self.index < len(input) and input[self.index] == '(':
             temp += input[self.index]
             self.checkForToken(temp)
             self.index += 1
             self.parseExpression(input)
-            self.skipForWhiteSpaces()
+            self.skipForWhiteSpaces(input)
             if self.index < len(input) and input[self.index] == ')':
                 temp = ")"
                 self.checkForToken(temp)
                 self.index += 1
-                self.skipForWhiteSpaces()
+                self.skipForWhiteSpaces(input)
             else:
                 raise SyntaxErrorException(f"Expected ')' at index {self.index}")
             
@@ -141,7 +150,7 @@ class Parser:
 
     def parseTerm(self, input:str):
         temp = ""
-        self.skipForWhiteSpaces()
+        self.skipForWhiteSpaces(input)
         self.parseFactor(input)
 
         while self.index < len(input) and input[self.index] in '*/':
@@ -150,11 +159,11 @@ class Parser:
             self.index += 1
             temp = ""
             self.parseFactor(input)
-        self.skipForWhiteSpaces
+        self.skipForWhiteSpaces(input)
 
     def parseExpression(self, input:str):
         temp = ""
-        self.skipForWhiteSpaces()
+        self.skipForWhiteSpaces(input)
         self.parseTerm(input)
 
         while self.index < len(input) and input[self.index] in '+-%':
@@ -164,10 +173,25 @@ class Parser:
             temp = ""
             self.parseTerm(input)
         
-        self.skipForWhiteSpaces()
+        self.skipForWhiteSpaces(input)
+
+    def parseIdentifier(self, input):
+        temp = ""
+        self.skipForWhiteSpaces(input)
+
+        if self.index < len(input) and input[self.index].isalpha():
+            while self.index < len(input) and input[self.index].isalnum() or input[self.index] == '_':
+                temp += input[self.index]
+                self.index += 1
+            self.result.append(temp + " : Identifier")
+            self.skipForWhiteSpaces(input)
+        else:
+            raise SyntaxErrorException(f"Expected identifier at index {self.index}")
 
 
     def parseAssignment(self, input: str):
+        self.index = 0
+        self.hasDataType = False
         temp = ""
         self.parseDataType(input)
         self.parseIdentifier(input)
