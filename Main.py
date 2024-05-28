@@ -15,14 +15,13 @@ class Main:
                 print("\n----- Lexeme : Token Pairs -----\n")
                 for token in parser.result:
                     print(token)
+                print("Computed Value: "+str(parser.getValue()))
                 parser.clearResult()
             except SyntaxErrorException as e:
                 print(e)
                 print("Invalid Input")
                 parser.clearResult()
-            except Exception as e:
-                print("Invalid Input. ", e)
-                parser.clearResult()
+            
 
 if __name__ == "__main__":
     Main.main()

@@ -11,12 +11,16 @@ class Parser:
     index = 0
     input = None
     hasDataType = False
+    value = 0
 
     def __init__(self):
         self.tokenMap = self.setUpTokenMap()  # Correctly initialize the tokenMap instance variable
 
     def clearResult(self):
         self.result.clear()
+    
+    def getValue(self):
+        return self.value
 
     def identifyNumericType(self, string):
         # Compiled regular expressions to match different numeric types
@@ -122,6 +126,7 @@ class Parser:
             self.index += 1
         self.result.append(f"{temp} : {self.identifyNumericType(temp)}")
         self.skipForWhiteSpaces(input)
+        return float(temp)
 
 
     def parseFactor(self, input:str):
@@ -132,49 +137,66 @@ class Parser:
             temp += input[self.index]
             self.checkForToken(temp)
             self.index += 1
-            self.parseExpression(input)
+            value = self.parseExpression(input)
             self.skipForWhiteSpaces(input)
             if self.index < len(input) and input[self.index] == ')':
                 temp = ")"
                 self.checkForToken(temp)
                 self.index += 1
                 self.skipForWhiteSpaces(input)
+                return value
             else:
                 raise SyntaxErrorException(f"Expected ')' at index {self.index}")
             
         elif input[self.index].isdigit():
-            self.parseNumber(input)
-        
+            return self.parseNumber(input)  # Return the parsed number
+            
         else:
             raise SyntaxErrorException(f"Expected a digit or an expression at index {self.index}")
-
+            
     def parseTerm(self, input:str):
         temp = ""
+        value = self.parseFactor(input)  # Initialize value with the parsed factor
         self.skipForWhiteSpaces(input)
-        self.parseFactor(input)
 
         while self.index < len(input) and input[self.index] in '*/':
             temp += input[self.index]
             self.checkForToken(temp)
+            operator = input[self.index]
             self.index += 1
             temp = ""
-            self.parseFactor(input)
+            operand = self.parseFactor(input)
+            if operator == '*':
+                value *= operand  # Use the parsed value as the initial value for multiplication
+            elif operator == '/':
+                value /= operand  # Use the parsed value as the initial value for division
+            else:
+                raise SyntaxErrorException(f"Invalid operator {operator} at index {self.index}")
         self.skipForWhiteSpaces(input)
+        return value
 
     def parseExpression(self, input:str):
         temp = ""
-        self.skipForWhiteSpaces(input)
-        self.parseTerm(input)
+        value = self.parseTerm(input)  # Initialize value with the parsed term
 
         while self.index < len(input) and input[self.index] in '+-%':
             temp += input[self.index]
             self.checkForToken(temp)
+            operator = input[self.index]
             self.index += 1
             temp = ""
-            self.parseTerm(input)
-        
-        self.skipForWhiteSpaces(input)
+            term_value = self.parseTerm(input)
+            if operator == '+':
+                value += term_value
+            elif operator == '-':
+                value -= term_value  # Correctly subtract the term value
+            elif operator == '%':
+                value %= term_value
+            else:
+                raise SyntaxErrorException(f"Invalid operator {operator} at index {self.index}")
 
+        return value
+    
     def parseIdentifier(self, input):
         temp = ""
         self.skipForWhiteSpaces(input)
@@ -192,6 +214,8 @@ class Parser:
     def parseAssignment(self, input: str):
         self.index = 0
         self.hasDataType = False
+        self.value = 0
+        
         temp = ""
         self.parseDataType(input)
         self.parseIdentifier(input)
@@ -200,18 +224,23 @@ class Parser:
             temp += input[self.index]
             self.checkForToken(temp)
             self.index += 1  # Correct increment syntax
-            self.parseExpression(input)
+            tempValue = self.parseExpression(input)
             self.parseSemiColon(input)
+            
 
         elif self.index < len(input) and self.isOperator(input[self.index]):
             temp += input[self.index]
-            index += 1
-            temp += input[self.index]
+            self.index += 1
+            operator = input[self.index]
+            temp += operator
+            self.index += 1
             self.checkForToken(temp)
-            index += 1
+            self.skipForWhiteSpaces(input)
 
-            self.parseExpression(input)
+            tempValue = self.parseExpression(input)
             self.parseSemiColon(input)
+            self.value = tempValue
+
         else:
             raise SyntaxErrorException(f"Expected '=' at index {self.index}")
 
